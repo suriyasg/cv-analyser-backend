@@ -125,7 +125,7 @@ jobs:
           key: coverage-${{ github.run_id }}
 
       - name: SonarQube Scan Backend
-        uses: sonarsource/sonarqube-scan-action@v6
+        uses: sonarsource/sonarqube-scan-action@v7
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
