@@ -114,3 +114,7 @@ sqlite.db
 
 # SonarQube
 .scannerwork
+
+
+# mac
+.DS_Store

@@ -10,10 +10,10 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
 
-from apps.api_auth.apis.customer.serializers import (
-    LoginCustomerResponseSerializer,
-    LoginCustomerSerializer,
-    UserAuthCustomerSerializer,
+from apps.api_auth.apis.cvowner.serializers import (
+    LoginCVOwnerResponseSerializer,
+    LoginCVOwnerSerializer,
+    UserAuthCVOwnerSerializer,
 )
 from apps.api_auth.utils import jwt_encode
 from apps.users.choices import UserTypes
@@ -23,19 +23,19 @@ logger = structlog.get_logger(__name__)
 User = get_user_model()
 
 
-# Customer Login
+# CVOwner Login
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-class AuthCustomerViewSet(PublicEndpoint, GenericViewSet):
+class AuthCVOwnerViewSet(PublicEndpoint, GenericViewSet):
     """
     Login using username/email and password.
     Used by the web portals specially for Customers.
     But can be used by any user that has password authentication set-up.
     """
 
-    @extend_schema(responses={200: LoginCustomerResponseSerializer})
-    @action(detail=False, methods=["post"], serializer_class=LoginCustomerSerializer)
+    @extend_schema(responses={200: LoginCVOwnerResponseSerializer})
+    @action(detail=False, methods=["post"], serializer_class=LoginCVOwnerSerializer)
     @transaction.atomic
     def login(self, request: Request, *args, **kwargs):
         """Login using username/email and password."""
@@ -48,7 +48,7 @@ class AuthCustomerViewSet(PublicEndpoint, GenericViewSet):
         # Try to infer the username using the email given
         if email is not None:
             try:
-                tmp_user = User.objects.get(email=email, user_type=UserTypes.CUSTOMER)
+                tmp_user = User.objects.get(email=email, user_type=UserTypes.CVOWNER)
                 username = tmp_user.get_username()
             except (User.DoesNotExist, User.MultipleObjectsReturned):
                 pass
@@ -57,17 +57,17 @@ class AuthCustomerViewSet(PublicEndpoint, GenericViewSet):
         user = authenticate(request, username=username, password=password)
         if user is None:
             raise ValidationError(_("Unable to log in with provided credentials"))
-        if user.user_type != UserTypes.CUSTOMER:
+        if user.user_type != UserTypes.CVOWNER:
             raise ValidationError(
                 _(
-                    "You are not an Customer, so you cannot use this authentication method"
+                    "You are not an CV Owner, so you cannot use this authentication method"
                 )
             )
 
         # Encode the user JWT
         access_token, refresh_token = jwt_encode(user)
-        user_serializer = UserAuthCustomerSerializer(instance=user)
-        res_serializer = LoginCustomerResponseSerializer(
+        user_serializer = UserAuthCVOwnerSerializer(instance=user)
+        res_serializer = LoginCVOwnerResponseSerializer(
             instance={
                 "user": user_serializer.data,
                 "access": str(access_token),
