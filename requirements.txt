@@ -67,3 +67,14 @@ django-zeal==2.0.4
 
 # To upgrade pip packages: pip-upgrade
 pip-upgrader==1.4.15
+
+
+# Lanchain
+langgraph==1.0.4
+langchain-ollama==1.0.1
+
+# Presidio
+presidio_analyzer==2.2.360
+presidio_anonymizer==2.2.360
+en_core_web_sm @ https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl
+
