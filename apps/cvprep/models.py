@@ -29,13 +29,33 @@ class CV(TimeStampedModel):
 
 
 class CVScan(TimeStampedModel):
+
+    class ScanStatus(models.TextChoices):
+        PENDING = "pe", "PENDING"
+        STARTED = "st", "STARTED"
+        PROCESSING = "pr", "PROCESSING"
+        FINISHED = "fi", "FINISHED"
+
     cv = models.ForeignKey(CV, on_delete=models.CASCADE)
     job_description = models.TextField(blank=True)
-    CV_STATUS = [
-        ("pe", "PENDING"),
-        ("st", "STARTED"),
-        ("pr", "PROCESSING"),
-        ("fi", "FINISHED"),
-    ]
-    scan_status = models.CharField(max_length=2, choices=CV_STATUS, default="pe")
+    scan_status = models.CharField(
+        max_length=2, choices=ScanStatus.choices, default=ScanStatus.PENDING
+    )
+    # CV_STATUS = [
+    #     ("pe", "PENDING"),
+    #     ("st", "STARTED"),
+    #     ("pr", "PROCESSING"),
+    #     ("fi", "FINISHED"),
+    # ]
+    # scan_status = models.CharField(max_length=2, choices=CV_STATUS, default="pe")
     scan_result = models.TextField(blank=True)
+    # Text
+    anonymized_cv_text = models.TextField(blank=True)
+    preprocessed_cv_text = models.TextField(blank=True)
+
+    # Json
+    identified_hard_skills = models.TextField(blank=True)
+    identified_soft_skills = models.TextField(blank=True)
+    hard_skill_analyser_output = models.TextField(blank=True)
+    soft_skill_analyser_output = models.TextField(blank=True)
+    summary_generator_output = models.TextField(blank=True)

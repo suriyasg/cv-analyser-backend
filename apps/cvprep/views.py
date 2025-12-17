@@ -6,8 +6,14 @@ from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.response import Response
 
 from apps.api_auth.apis.common.serializers import UserSerializer
+from apps.users.choices import UserTypes
 from config.settings import MEDIA_ROOT, MEDIA_URL
-from .serializers import CVOwnerSerializer, CVSerializer, CVScanSerializer
+from .serializers import (
+    CVOwnerSerializer,
+    CVSerializer,
+    CVScanSerializer,
+    UserCVOwnerSerializer,
+)
 from rest_framework import status, mixins, generics
 from .models import CV, CVOwner, CVScan
 
@@ -19,8 +25,9 @@ from django.http import HttpResponse, HttpResponseBase, JsonResponse
 from django.middleware.csrf import get_token
 
 from apps.utils.permissions import IsAdminORCVScanOwner, IsSameUser, IsAdminORCVOwner
-from rest_framework.permissions import IsAuthenticated, IsAdminUser
+from rest_framework.permissions import IsAuthenticated, IsAdminUser, AllowAny
 from rest_framework.decorators import api_view, permission_classes
+from rest_framework import exceptions
 
 from django.contrib.auth import get_user_model
 
@@ -82,7 +89,7 @@ class CVUploadView(APIView):
             if update_serializer.is_valid():
                 update_serializer.save()
                 cv_scan = CVScan(
-                    scan_status="PENDING",
+                    scan_status=CVScan.ScanStatus.PENDING,
                     cv=instance,
                     job_description=request.data.get("job_description", ""),
                 )
@@ -106,10 +113,44 @@ class CVUploadView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class CreateCVOwner(APIView):
+class CVOwnerAPIView(APIView):
+    # Gives authentication methods, can be any of class which extends BaseAuthentication,
+    # we are using JWTAuthentication from simpleJWT, which we delared in default DEFAULT_AUTHENTICATION_CLASSES
+    # What if we use mutliple auth classess? how it will be handled? what will be checked first?
+    # from rest_framework.authentication import SessionAuthentication, BasicAuthentication, TokenAuthentication, RemoteUserAuthentication
+    # permission_classes = []
+
+    def get_authenticators(self):
+        if self.request.method == "POST":
+            return []
+        else:
+            return super().get_authenticators()
+
+    # Gives authorization methods, can be any of class which extends BasePermission class
+    # AllowAny
+    # IsAuthenticated
+    # IsAdminUser
+    # IsAuthenticatedOrReadOnly
+    # DjangoModelPermissions
+    # DjangoModelPermissionsOrAnonReadOnly
+    # DjangoObjectPermissions
+    def get_permissions(self):
+        return [AllowAny()]
+        # if self.request.method == "POST":
+        #     return [AllowAny()]
+        # else:
+        #     return super().get_permissions()
+
+    def get(self, request):
+        print("even get run")
+        cvowners = CVOwner.objects.all()
+        serializer = UserCVOwnerSerializer(instance=cvowners, many=True)
+        return Response(data=serializer.data)
+
     # creates A User (which is used for auth) and creates CVOwner
     def post(self, request):
         username = request.data.get("username")
+        email = request.data.get("email")
         password = request.data.get("password")
         if not password or not username:
             return Response(
@@ -117,7 +158,12 @@ class CreateCVOwner(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        user = User.objects.create_user(username=username, password=password)
+        user = User.objects.create_user(
+            username=username,
+            password=password,
+            email=email,
+            user_type=UserTypes.CVOWNER,
+        )
         print("user", user)
         if not user:
             return Response(
@@ -135,9 +181,41 @@ class CreateCVOwner(APIView):
 
 
 class CVScanListView(generics.ListCreateAPIView):
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsAuthenticated]
     queryset = CVScan.objects.all()
     serializer_class = CVScanSerializer
+
+    def get(self, request, *args, **kwargs):
+        if self.request.user.is_staff:
+            return super().get(request, *args, **kwargs)
+        else:
+            raise exceptions.NotAuthenticated(detail="You are not allowed")
+
+    def post(self, request, *args, **kwargs):
+        cv_id = request.data.get("cv")
+        job_description = request.data.get("job_description")
+        print(cv_id)
+        print(job_description)
+        cv = CV.objects.get(id=cv_id)
+        if cv.owner.user.id == request.user.id:
+            new_scan = CVScanSerializer(
+                data={
+                    "job_description": job_description,
+                    # "cv": cv, # cv is read only field in serializer so it will ignore. so save it with save function
+                    "scan_status": CVScan.ScanStatus.PENDING,
+                }
+            )
+            if new_scan.is_valid():
+                new_scan.save(cv=cv)
+                analyze_cv_task.delay(cv_id, new_scan.data.get("id"))
+            else:
+                raise exceptions.ValidationError(detail="Invalid job_description")
+        else:
+            raise exceptions.NotAuthenticated(
+                detail="You are not allowed to scan other user cvs"
+            )
+
+        return Response(data=new_scan.data, status=status.HTTP_201_CREATED)
 
 
 class CVScanDetailView(generics.RetrieveAPIView, generics.UpdateAPIView):
@@ -201,7 +279,7 @@ class CVViewSet(GenericViewSet):
             if update_serializer.is_valid():
                 update_serializer.save()
                 cv_scan = CVScan(
-                    scan_status="PENDING",
+                    scan_status=CVScan.ScanStatus.PENDING,
                     cv=instance,
                     job_description=request.data.get("job_description", ""),
                 )

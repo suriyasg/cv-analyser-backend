@@ -48,7 +48,10 @@ class AuthCVOwnerViewSet(PublicEndpoint, GenericViewSet):
         # Try to infer the username using the email given
         if email is not None:
             try:
-                tmp_user = User.objects.get(email=email, user_type=UserTypes.CVOWNER)
+                tmp_user = User.objects.get(
+                    email=email, username=username, user_type=UserTypes.CVOWNER
+                )
+                print(tmp_user)
                 username = tmp_user.get_username()
             except (User.DoesNotExist, User.MultipleObjectsReturned):
                 pass
