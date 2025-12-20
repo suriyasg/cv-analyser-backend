@@ -17,7 +17,7 @@ from apps.cvprep.views import (
     CVScanDetailView,
     CVScanListView,
     CVUploadView,
-    CreateCVOwner,
+    CVOwnerAPIView,
     get_csrf,
     get_logged_in_user,
 )
@@ -65,20 +65,24 @@ urlpatterns = [
     path("", RedirectView.as_view(pattern_name="admin:index")),
     path("upload/", CVUploadView.as_view(), name="file_upload"),
     path(
-        "scan_results/",
+        "scans/",
         view=CVScanListView.as_view(),
         name="scan_results",
     ),
     path(
-        "scan_results/<int:pk>",
+        "scans/<int:pk>",
         view=CVScanDetailView.as_view(),
         name="scan_results",
     ),
     path("cvs/", include(cv_router.urls)),
     path("cvs/", include(cv_detail_router.urls)),
     # path("cvs/<int:pk>", view=CVDetailView.as_view(), name="cv"),
-    path("createCVOwner/", view=CreateCVOwner.as_view(), name="createCVOwner"),
-    path("cvowners/", view=CVOwnerListView.as_view(), name="owners"),
+    path("apiview/cvowners/", view=CVOwnerAPIView.as_view(), name="apiview-cvowners"),
+    path(
+        "listcreateapiview/cvowners/",
+        view=CVOwnerListView.as_view(),
+        name="listcreateapiview-cvowners",
+    ),
     # redundant and tests
     # path("status/", CVScanViewSet.as_view({"get": "list"}), name="status"),
     # path("target/", view=TargetView.as_view(), name="targer"),
