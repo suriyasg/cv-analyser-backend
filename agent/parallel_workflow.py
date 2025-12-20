@@ -1,7 +1,7 @@
 from typing import TypedDict
 
 from langchain_ollama import ChatOllama
-from langgraph.graph import StateGraph
+from langgraph.graph import StateGraph, START, END
 
 from presidio_analyzer import AnalyzerEngine
 from presidio_analyzer.nlp_engine import NlpEngineProvider
@@ -185,38 +185,46 @@ def summary_generator_agent(state: State) -> State:
 
 graph = StateGraph(State)
 
-# adding agents
-graph.add_node("anonymizer_agent", anonymizer_agent)
+# adding agents (nodes)
 graph.add_node("preprocess_agent", preprocess_agent)
 graph.add_node("hard_skill_identifier_agent", hard_skill_identifier_agent)
 graph.add_node("soft_skill_identifier_agent", soft_skill_identifier_agent)
 graph.add_node("hard_skill_analyzer_agent", hard_skill_analyzer_agent)
 graph.add_node("soft_skill_analyzer_agent", soft_skill_analyzer_agent)
+# aggregator
 graph.add_node("summary_generator_agent", summary_generator_agent)
 
 # adding edges
-graph.set_entry_point("anonymizer_agent")
-graph.add_edge("anonymizer_agent", "preprocess_agent")
-graph.add_edge("preprocess_agent", "hard_skill_identifier_agent")
-graph.add_edge("hard_skill_identifier_agent", "soft_skill_identifier_agent")
-graph.add_edge("soft_skill_identifier_agent", "hard_skill_analyzer_agent")
-graph.add_edge("hard_skill_analyzer_agent", "soft_skill_analyzer_agent")
+graph.add_edge(START, "preprocess_agent")
+graph.add_edge(START, "hard_skill_identifier_agent")
+graph.add_edge(START, "soft_skill_identifier_agent")
+
+graph.add_edge("preprocess_agent", "hard_skill_analyzer_agent")
+graph.add_edge("preprocess_agent", "soft_skill_analyzer_agent")
+
+graph.add_edge("hard_skill_identifier_agent", "summary_generator_agent")
+graph.add_edge("soft_skill_identifier_agent", "summary_generator_agent")
+graph.add_edge("hard_skill_analyzer_agent", "summary_generator_agent")
 graph.add_edge("soft_skill_analyzer_agent", "summary_generator_agent")
-graph.set_finish_point("summary_generator_agent")
+
+graph.add_edge("summary_generator_agent", END)
 
 
-steam_line_agents_app = graph.compile()
+parallel_workflow = graph.compile()
 
-# raw_cv_text = """
-# """
+raw_cv_text = """
+"""
 
-# job_description = """
-# """
+job_description = """
+"""
 
-# result = app.invoke({"raw_cv_text": raw_cv_text, "job_description": job_description})
+result = parallel_workflow.invoke(
+    {"raw_cv_text": raw_cv_text, "job_description": job_description}
+)
 
-# import json
-# with open("agent_result.txt", "w", encoding="utf-8") as f:
-#     f.write(str(result))  # Convert to string if it's not already
-# with open("agent_result.json", "w", encoding="utf-8") as f:
-#     json.dump(result, f, indent=2)
+import json
+
+with open("agent_result.txt", "w", encoding="utf-8") as f:
+    f.write(str(result))  # Convert to string if it's not already
+with open("agent_result.json", "w", encoding="utf-8") as f:
+    json.dump(result, f, indent=2)
