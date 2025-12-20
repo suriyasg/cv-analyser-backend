@@ -320,9 +320,3 @@ class CVDetailViewSet(
 
     # def partial_update(self, request, *args, **kwargs):
     #     print(request.user)
-
-
-class CVDetailView(generics.RetrieveAPIView):
-    permission_classes = [IsAdminORCVOwner]
-    queryset = CV.objects.all()
-    serializer_class = CVSerializer

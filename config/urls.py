@@ -10,7 +10,6 @@ from apps.api_auth.apis.common.views import MeCommonViewSet, TokenCommonViewSet
 from apps.api_auth.apis.customer.views import AuthCustomerViewSet
 from apps.api_auth.apis.cvowner.views import AuthCVOwnerViewSet
 from apps.cvprep.views import (
-    CVDetailView,
     CVDetailViewSet,
     CVViewSet,
     CVOwnerListView,
