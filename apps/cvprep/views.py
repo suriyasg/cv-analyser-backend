@@ -92,6 +92,7 @@ class CVUploadView(APIView):
                     scan_status=CVScan.ScanStatus.PENDING,
                     cv=instance,
                     job_description=request.data.get("job_description", ""),
+                    title=request.data.get("scan_title", ""),
                 )
                 cv_scan.save()
                 cv_scan_serializer = CVScanSerializer(instance=cv_scan)
@@ -194,6 +195,7 @@ class CVScanListView(generics.ListCreateAPIView):
     def post(self, request, *args, **kwargs):
         cv_id = request.data.get("cv")
         job_description = request.data.get("job_description")
+        scan_title = request.data.get("title")
         print(cv_id)
         print(job_description)
         cv = CV.objects.get(id=cv_id)
@@ -203,13 +205,16 @@ class CVScanListView(generics.ListCreateAPIView):
                     "job_description": job_description,
                     # "cv": cv, # cv is read only field in serializer so it will ignore. so save it with save function
                     "scan_status": CVScan.ScanStatus.PENDING,
+                    "title": scan_title,
                 }
             )
             if new_scan.is_valid():
                 new_scan.save(cv=cv)
                 analyze_cv_task.delay(cv_id, new_scan.data.get("id"))
             else:
-                raise exceptions.ValidationError(detail="Invalid job_description")
+                return Response(
+                    data=new_scan.errors, status=status.HTTP_400_BAD_REQUEST
+                )
         else:
             raise exceptions.NotAuthenticated(
                 detail="You are not allowed to scan other user cvs"
