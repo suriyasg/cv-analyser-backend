@@ -69,6 +69,16 @@ UNFOLD_ADMIN_UI = {
                         "icon": "group",
                         "link": changelist("users", "user"),
                     },
+                    {
+                        "title": "CV",
+                        "icon": "group",
+                        "link": changelist("cvprep", "CV"),
+                    },
+                    {
+                        "title": "CVScan",
+                        "icon": "group",
+                        "link": changelist("cvprep", "CVScan"),
+                    },
                 ],
             },
             {
