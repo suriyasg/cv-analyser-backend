@@ -29,6 +29,7 @@ class CV(TimeStampedModel):
 
 
 class CVScan(TimeStampedModel):
+    title = models.CharField(max_length=255, default="Untitled Scan")
 
     class ScanStatus(models.TextChoices):
         PENDING = "pe", "PENDING"

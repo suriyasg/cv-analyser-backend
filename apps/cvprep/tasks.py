@@ -1,7 +1,16 @@
 # cv/tasks.py
+import time
 from celery import shared_task
 from .models import CV, CVScan
 from agent.steam_line_workflow import State, steam_line_workflow
+
+
+@shared_task(bind=True)
+def say_hello(self):
+    print("hello")
+    time.sleep(5)
+    print("hello")
+    return {"done": True}
 
 
 @shared_task(bind=True)
