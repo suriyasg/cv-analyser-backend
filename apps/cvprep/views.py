@@ -6,6 +6,7 @@ from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.response import Response
 
 from apps.api_auth.apis.common.serializers import UserSerializer
+from apps.cvprep.filter import CVFilter, StandardResultsSetPagination
 from apps.users.choices import UserTypes
 from config.settings import MEDIA_ROOT, MEDIA_URL
 from .serializers import (
@@ -185,6 +186,7 @@ class CVScanListView(generics.ListCreateAPIView):
     permission_classes = [IsAuthenticated]
     queryset = CVScan.objects.all()
     serializer_class = CVScanSerializer
+    filterset_fields = ["scan_status"]
 
     def get(self, request, *args, **kwargs):
         if self.request.user.is_staff:
@@ -235,16 +237,44 @@ class CVOwnerListView(generics.ListCreateAPIView):
     serializer_class = CVOwnerSerializer
 
 
-class CVViewSet(GenericViewSet):
+class CVViewSet(mixins.ListModelMixin, GenericViewSet):
     permission_classes = [IsSameUser]
     serializer_class = CVSerializer
     queryset = CV.objects.all()
 
-    def list(self, request):
-        owner_id = CVOwner.objects.get(user_id=request.user.id)
-        user_scans = self.queryset.filter(owner_id=owner_id)
-        serializer = self.get_serializer(user_scans, many=True)
-        return Response(data=serializer.data)
+    # Filtering
+    # filterset_fields = ["title"]  # only provides exact match
+    # fliterset_class = CVFilter
+    # Search filter : partical case insensitive searcb
+    # https://www.django-rest-framework.org/api-guide/filtering/#searchfilter
+    from rest_framework import filters
+
+    filter_backends = [filters.SearchFilter]
+    search_fields = ["title"]
+
+    pagination_class = StandardResultsSetPagination
+
+    # Admin can get all CVs, other users can only get their CVs
+    # Method 1 override list method
+    # def list(self, request):
+    #     if request.user.is_staff:
+    #         user_cvs = CV.objects.all()
+    #     else:
+    #         owner_id = CVOwner.objects.get(user_id=request.user.id)
+    #         user_cvs = self.queryset.filter(owner_id=owner_id)
+
+    #     serializer = self.get_serializer(user_cvs, many=True)
+    #     return Response(data=serializer.data)
+
+    # Method 2 override get_queryset() based on request
+    #  but we need to add mixins.ListModelMixin to inherit list method, otherwise we will get method not allowed error
+    #  BY adding ListModelMixin it will give a nice paginated output so we need to be carefull
+    def get_queryset(self):
+        if self.request.user.is_staff:
+            return super().get_queryset()
+        else:
+            owner_id = CVOwner.objects.get(user_id=self.request.user.id)
+            return self.queryset.filter(owner_id=owner_id)
 
     def create(self, request):
         data_with_owner = request.data
