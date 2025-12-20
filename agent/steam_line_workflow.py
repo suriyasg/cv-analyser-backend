@@ -43,7 +43,8 @@ OLLAMA_BASE_URL = env("OLLAMA_BASE_URL")
 # model="smollm:135m",
 # model="hhao/qwen2.5-coder-tools:0.5b",
 # MODEL_NAME = "hhao/qwen2.5-coder-tools:0.5b"
-MODEL_NAME = "gemini-2.5-flash-lite"
+# MODEL_NAME = "gemini-2.5-flash-lite"
+MODEL_NAME = "gemini-2.5-flash"
 
 # OLLAMA for local testing without ratelimits and other hinderances
 # llm = ChatOllama(base_url=OLLAMA_BASE_URL, model=MODEL_NAME)
@@ -51,7 +52,7 @@ MODEL_NAME = "gemini-2.5-flash-lite"
 # https://github.com/langchain-ai/langchain-google/issues/1042
 # https://github.com/IrakliGLD/langchain_railway/commit/d149adc21bf03c39ba432260f6ecadb58a007687
 llm = ChatGoogleGenerativeAI(
-    model="gemini-2.5-flash-lite",
+    model=MODEL_NAME,
     api_key=GEN_AI_API_KEY,
     max_retries=1,
 )
