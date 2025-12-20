@@ -31,7 +31,7 @@ class PartialCVScanSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = CVScan
-        fields = ["id", "created", "scan_status"]
+        fields = ["id", "title", "created", "scan_status"]
 
 
 class CVSerializer(serializers.ModelSerializer):
