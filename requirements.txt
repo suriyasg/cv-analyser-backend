@@ -72,6 +72,7 @@ pip-upgrader==1.4.15
 # Lanchain
 langgraph==1.0.4
 langchain-ollama==1.0.1
+langchain-google-genai==4.1.1
 
 # Presidio
 presidio_analyzer==2.2.360
