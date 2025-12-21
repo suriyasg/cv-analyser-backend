@@ -1,8 +1,7 @@
 from typing import TypedDict
 
 from langchain_ollama import ChatOllama
-from langgraph.graph import StateGraph, START, END
-
+from langgraph.graph import END, START, StateGraph
 from presidio_analyzer import AnalyzerEngine
 from presidio_analyzer.nlp_engine import NlpEngineProvider
 from presidio_anonymizer import AnonymizerEngine
@@ -53,9 +52,7 @@ def anonymizer_agent(state: State) -> State:
         language="en",
     )
     anonymize_engine = AnonymizerEngine()
-    anonymized_cv_text = anonymize_engine.anonymize(
-        text=state["raw_cv_text"], analyzer_results=analyzer_results
-    )
+    anonymized_cv_text = anonymize_engine.anonymize(text=state["raw_cv_text"], analyzer_results=analyzer_results)
     state["anonymized_cv_text"] = anonymized_cv_text.text
     return state
 
@@ -218,13 +215,12 @@ raw_cv_text = """
 job_description = """
 """
 
-result = parallel_workflow.invoke(
-    {"raw_cv_text": raw_cv_text, "job_description": job_description}
-)
+# result = parallel_workflow.invoke(
+#     {"raw_cv_text": raw_cv_text, "job_description": job_description}
+# )
 
-import json
-
-with open("agent_result.txt", "w", encoding="utf-8") as f:
-    f.write(str(result))  # Convert to string if it's not already
-with open("agent_result.json", "w", encoding="utf-8") as f:
-    json.dump(result, f, indent=2)
+# import json
+# with open("agent_result.txt", "w", encoding="utf-8") as f:
+#     f.write(str(result))  # Convert to string if it's not already
+# with open("agent_result.json", "w", encoding="utf-8") as f:
+#     json.dump(result, f, indent=2)

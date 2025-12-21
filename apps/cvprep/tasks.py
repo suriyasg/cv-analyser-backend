@@ -1,7 +1,9 @@
 # cv/tasks.py
 from celery import shared_task
-from .models import CV, CVScan
+
 from agent.steam_line_workflow import State, steam_line_workflow
+
+from .models import CV, CVScan
 
 
 @shared_task(bind=True)

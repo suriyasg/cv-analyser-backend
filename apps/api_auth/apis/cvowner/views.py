@@ -48,9 +48,7 @@ class AuthCVOwnerViewSet(PublicEndpoint, GenericViewSet):
         # Try to infer the username using the email given
         if email is not None:
             try:
-                tmp_user = User.objects.get(
-                    email=email, username=username, user_type=UserTypes.CVOWNER
-                )
+                tmp_user = User.objects.get(email=email, username=username, user_type=UserTypes.CVOWNER)
                 print(tmp_user)
                 username = tmp_user.get_username()
             except (User.DoesNotExist, User.MultipleObjectsReturned):
@@ -61,11 +59,7 @@ class AuthCVOwnerViewSet(PublicEndpoint, GenericViewSet):
         if user is None:
             raise ValidationError(_("Unable to log in with provided credentials"))
         if user.user_type != UserTypes.CVOWNER:
-            raise ValidationError(
-                _(
-                    "You are not an CV Owner, so you cannot use this authentication method"
-                )
-            )
+            raise ValidationError(_("You are not an CV Owner, so you cannot use this authentication method"))
 
         # Encode the user JWT
         access_token, refresh_token = jwt_encode(user)

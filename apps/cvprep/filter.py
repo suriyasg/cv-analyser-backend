@@ -1,8 +1,7 @@
 import django_filters
+from rest_framework.pagination import PageNumberPagination
 
 from apps.cvprep.models import CV, CVScan
-
-from rest_framework.pagination import PageNumberPagination
 
 # https://django-filter.readthedocs.io/en/stable/guide/usage.html
 

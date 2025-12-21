@@ -1,4 +1,4 @@
-from typing import TypedDict, Dict
+from typing import Dict, TypedDict
 
 
 class AgentPrompts(TypedDict):
@@ -71,7 +71,7 @@ Return JSON only:
 """,
     },
     "gemini-2.5-flash-lite": {
-        "preprocess": """You are an expert Resume Parser and Data Cleaner. 
+        "preprocess": """You are an expert Resume Parser and Data Cleaner.
 Your goal is to restructure the candidate's raw CV text into a clear, canonical format suitable for automated analysis.
 
 Instructions:
@@ -158,7 +158,7 @@ Return **only** valid JSON with this schema:
 }""",
     },
     "gemini-2.5-flash": {
-        "preprocess": """You are an expert Resume Parser and Data Cleaner. 
+        "preprocess": """You are an expert Resume Parser and Data Cleaner.
 Your goal is to restructure the candidate's raw CV text into a clear, canonical format suitable for automated analysis.
 
 Instructions:
@@ -247,9 +247,7 @@ Return **only** valid JSON with this schema:
 }
 
 
-def print_agent_prompt_and_response(
-    agent: str, prompt: str, response: str, max_len: int = 500
-):
+def print_agent_prompt_and_response(agent: str, prompt: str, response: str, max_len: int = 500):
     """
     Nicely prints an agent's name, the prompt sent, and the response received.
 
@@ -287,9 +285,9 @@ def print_agent_prompt_and_response(
 
 def get_prompt(model_prompts: ModelPrompts, model: str) -> AgentPrompts:
     prompt = model_prompts.get(model, None)
-    if prompt == None:
+    if prompt is None:
         default_prompt = model_prompts.get(DEFAULT_MODEL, None)
-        if default_prompt == None:
+        if default_prompt is None:
             raise ValueError("Could not get default prompt")
         else:
             return default_prompt

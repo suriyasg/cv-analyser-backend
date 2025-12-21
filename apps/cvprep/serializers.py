@@ -1,9 +1,11 @@
 # myapp/serializers.py
 import json
+
 from rest_framework import serializers
 
 from apps.api_auth.apis.common.serializers import UserSerializer
-from .models import CV, CVScan, CVOwner
+
+from .models import CV, CVOwner, CVScan
 
 
 class UserCVOwnerSerializer(serializers.ModelSerializer):

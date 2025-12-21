@@ -20,10 +20,7 @@ class IsAdminORCVOwner(permissions.BasePermission):
         print("checking has_object_permission")
         # print("obj id", obj.cv.owner.user_id)
         # print("user id", request.user.id)
-        return (
-            CVOwner.objects.get(id=obj.owner_id).user.id == request.user.id
-            or request.user.is_superuser
-        )
+        return CVOwner.objects.get(id=obj.owner_id).user.id == request.user.id or request.user.is_superuser
 
 
 class IsAdminORCVScanOwner(permissions.BasePermission):
