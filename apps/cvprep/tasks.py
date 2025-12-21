@@ -3,13 +3,13 @@ from typing import cast
 
 from celery import shared_task
 
-from agent.steam_line_workflow import State, steam_line_workflow
-
 from .models import CV, CVScan
 
 
 @shared_task(bind=True)
 def analyze_cv_task(self, cv_id, scan_id):
+    from agent.steam_line_workflow import State, steam_line_workflow
+
     try:
         cv = CV.objects.get(pk=cv_id)
         cv_scan = CVScan.objects.get(pk=scan_id)

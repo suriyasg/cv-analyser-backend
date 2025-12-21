@@ -2,8 +2,9 @@
 import time
 from typing import List, TypedDict
 
-import environ
+from django.conf import settings
 from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_ollama import ChatOllama
 from langgraph.graph import StateGraph
 from presidio_analyzer import AnalyzerEngine, recognizer_result
 from presidio_analyzer.nlp_engine import NlpEngineProvider
@@ -28,10 +29,8 @@ class State(TypedDict):
     summary_generator_output: str
 
 
-env = environ.Env()
-env.read_env(".env")
-GEN_AI_API_KEY = env("GEN_AI_API_KEY")
-OLLAMA_BASE_URL = env("OLLAMA_BASE_URL")
+GEN_AI_API_KEY = settings.GEN_AI_API_KEY
+OLLAMA_BASE_URL = settings.OLLAMA_BASE_URL
 
 
 # without llm to test things out
@@ -48,16 +47,45 @@ OLLAMA_BASE_URL = env("OLLAMA_BASE_URL")
 MODEL_NAME = "gemini-2.5-flash"
 SLEEP_DURATION = 30
 
-# OLLAMA for local testing without ratelimits and other hinderances
-# llm = ChatOllama(base_url=OLLAMA_BASE_URL, model=MODEL_NAME)
+# select langchaing llm adapter
+LLM_NAME = "ChatGoogleGenerativeAI"
+# LLM_NAME = "ChatOllama"
 
-# https://github.com/langchain-ai/langchain-google/issues/1042
-# https://github.com/IrakliGLD/langchain_railway/commit/d149adc21bf03c39ba432260f6ecadb58a007687
-llm = ChatGoogleGenerativeAI(
-    model=MODEL_NAME,
-    api_key=GEN_AI_API_KEY,
-    max_retries=1,
-)
+
+# One LLM instance per Python process
+# In Celery:
+# Each worker process gets its own instance
+# This is not “global singleton across workers”, only per process.
+llmInstance: ChatGoogleGenerativeAI | ChatOllama | None = None
+
+
+def get_llm():
+    global llmInstance
+    if llmInstance is None:
+        match LLM_NAME:
+            case "ChatGoogleGenerativeAI":
+                if not GEN_AI_API_KEY:
+                    raise RuntimeError("GEN_AI_API_KEY not configured")
+
+                # https://github.com/langchain-ai/langchain-google/issues/1042
+                # https://github.com/IrakliGLD/langchain_railway/commit/d149adc21bf03c39ba432260f6ecadb58a007687
+                llmInstance = ChatGoogleGenerativeAI(
+                    model=MODEL_NAME,
+                    api_key=GEN_AI_API_KEY,
+                    max_retries=1,
+                )
+            case "ChatOllama":
+                if not OLLAMA_BASE_URL:
+                    raise RuntimeError("OLLAMA_BASE_URL not configured")
+                # OLLAMA for local testing without ratelimits and other hinderances
+                llmInstance = ChatOllama(base_url=OLLAMA_BASE_URL, model=MODEL_NAME)
+            case _:
+                raise ValueError(f"Unknown LLM_NAME: {LLM_NAME}")
+
+        return llmInstance
+
+    else:
+        return llmInstance
 
 
 PROMPTS = get_prompt(model_prompts=model_prompts, model=MODEL_NAME)
@@ -104,6 +132,7 @@ def anonymizer_agent(state: State) -> State:
 
 
 def preprocess_agent(state: State) -> State:
+    llm = get_llm()
     prompt = f"""
     {PROMPTS["preprocess"]}
 
@@ -122,6 +151,7 @@ def preprocess_agent(state: State) -> State:
 
 
 def hard_skill_identifier_agent(state: State) -> State:
+    llm = get_llm()
     prompt = f"""
     {PROMPTS["hard_skill_identifier"]}
 
@@ -139,6 +169,7 @@ def hard_skill_identifier_agent(state: State) -> State:
 
 
 def soft_skill_identifier_agent(state: State) -> State:
+    llm = get_llm()
     prompt = f"""
     {PROMPTS["soft_skill_identifier"]}
 
@@ -156,6 +187,7 @@ def soft_skill_identifier_agent(state: State) -> State:
 
 
 def hard_skill_analyzer_agent(state: State) -> State:
+    llm = get_llm()
     prompt = f"""
     {PROMPTS["hard_skill_analyzer"]}
 
@@ -182,6 +214,7 @@ def hard_skill_analyzer_agent(state: State) -> State:
 
 
 def soft_skill_analyzer_agent(state: State) -> State:
+    llm = get_llm()
     prompt = f"""
     {PROMPTS["soft_skill_analyzer"]}
 
@@ -208,6 +241,7 @@ def soft_skill_analyzer_agent(state: State) -> State:
 
 
 def summary_generator_agent(state: State) -> State:
+    llm = get_llm()
     prompt = f"""
     {PROMPTS["summary_generator"]}
 
