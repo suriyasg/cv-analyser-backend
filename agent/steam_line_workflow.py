@@ -1,13 +1,13 @@
 # import re
 import time
-from typing import TypedDict
+from typing import List, TypedDict
 
 import environ
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langgraph.graph import StateGraph
-from presidio_analyzer import AnalyzerEngine
+from presidio_analyzer import AnalyzerEngine, recognizer_result
 from presidio_analyzer.nlp_engine import NlpEngineProvider
-from presidio_anonymizer import AnonymizerEngine
+from presidio_anonymizer import AnonymizerEngine, entities
 
 from agent.parseJsonMarkdown import parse_markdown_json
 from agent.prompts import get_prompt, model_prompts, print_agent_prompt_and_response
@@ -21,8 +21,8 @@ class State(TypedDict):
     anonymized_cv_text: str
     preprocessed_cv_text: str
     job_description: str
-    identified_hard_skills: list[str]
-    identified_soft_skills: list[str]
+    identified_hard_skills: str
+    identified_soft_skills: str
     hard_skill_analyser_output: str
     soft_skill_analyser_output: str
     summary_generator_output: str
@@ -76,12 +76,24 @@ def anonymizer_agent(state: State) -> State:
 
     pii_analyzer = AnalyzerEngine(nlp_engine=nlp_engine, supported_languages=["en"])
 
-    analyzer_results = pii_analyzer.analyze(
+    analyzer_results: List[recognizer_result.RecognizerResult] = pii_analyzer.analyze(
         text=state["raw_cv_text"],
         language="en",
     )
+
+    anonymizer_input: List[entities.RecognizerResult] = []
+    for result in analyzer_results:
+        anonymizer_input.append(
+            entities.RecognizerResult(
+                entity_type=result.entity_type,
+                start=result.start,
+                end=result.end,
+                score=result.score,
+            )
+        )
+
     anonymize_engine = AnonymizerEngine()
-    anonymized_cv_text = anonymize_engine.anonymize(text=state["raw_cv_text"], analyzer_results=analyzer_results)
+    anonymized_cv_text = anonymize_engine.anonymize(text=state["raw_cv_text"], analyzer_results=anonymizer_input)
     state["anonymized_cv_text"] = anonymized_cv_text.text
     print_agent_prompt_and_response(
         agent="anonymizer_agent",
@@ -120,7 +132,7 @@ def hard_skill_identifier_agent(state: State) -> State:
     print_agent_prompt_and_response(
         agent="hard_skill_identifier_agent",
         prompt=prompt,
-        response=state["identified_hard_skills"],
+        response=str(state["identified_hard_skills"]),
     )
     time.sleep(SLEEP_DURATION)
     return state
@@ -137,7 +149,7 @@ def soft_skill_identifier_agent(state: State) -> State:
     print_agent_prompt_and_response(
         agent="soft_skill_identifier_agent",
         prompt=prompt,
-        response=state["identified_soft_skills"],
+        response=str(state["identified_soft_skills"]),
     )
     time.sleep(SLEEP_DURATION)
     return state

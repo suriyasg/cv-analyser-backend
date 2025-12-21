@@ -1,4 +1,5 @@
 import os
+import uuid
 
 import pymupdf
 from django.contrib.auth import get_user_model
@@ -61,7 +62,10 @@ class CVUploadView(APIView):
             serializer.save()
 
             try:
-                urlPath: str = serializer.data.get("file")
+                urlPath = serializer.data.get("file")
+                if urlPath is None:
+                    raise exceptions.ParseError(detail="file name can not be none", code="error")
+
                 path = urlPath.replace(MEDIA_URL, "")
                 fileLocation = os.path.join(MEDIA_ROOT, path)
 
@@ -79,7 +83,14 @@ class CVUploadView(APIView):
                     status=status.HTTP_206_PARTIAL_CONTENT,
                 )
 
-            instance = CV.objects.get(pk=serializer.data.get("id"))
+            pk = serializer.data.get("id")
+            if pk is None:
+                return Response(
+                    {"message": "could not get id of CV"},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                )
+
+            instance = CV.objects.get(pk=pk)
             update_serializer = CVSerializer(instance=instance, data={"cv_text": text}, partial=True)
             if update_serializer.is_valid():
                 update_serializer.save()
@@ -258,7 +269,10 @@ class CVViewSet(mixins.ListModelMixin, GenericViewSet):
         if self.request.user.is_staff:
             return super().get_queryset()
         else:
-            owner_id = CVOwner.objects.get(user_id=self.request.user.id)
+            user_id = self.request.user.id
+            if user_id is None or not isinstance(user_id, (str, uuid.UUID)):
+                raise exceptions.ParseError(detail="could not get proper user id", code="error")
+            owner_id = CVOwner.objects.get(user_id=user_id)
             return self.queryset.filter(owner_id=owner_id)
 
     def create(self, request):
@@ -274,7 +288,9 @@ class CVViewSet(mixins.ListModelMixin, GenericViewSet):
             serializer.save(owner=request.user.cvowner)
 
             try:
-                urlPath: str = serializer.data.get("file")
+                urlPath = serializer.data.get("file")
+                if urlPath is None:
+                    raise exceptions.ParseError(detail="file name can not be none", code="error")
                 path = urlPath.replace(MEDIA_URL, "")
                 fileLocation = os.path.join(MEDIA_ROOT, path)
 
@@ -291,8 +307,13 @@ class CVViewSet(mixins.ListModelMixin, GenericViewSet):
                     {"message": "could not parse text from cv, CV saved"},
                     status=status.HTTP_206_PARTIAL_CONTENT,
                 )
-
-            instance = CV.objects.get(pk=serializer.data.get("id"))
+            pk = serializer.data.get("id")
+            if pk is None:
+                return Response(
+                    {"message": "could not get id of CV"},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                )
+            instance = CV.objects.get(pk=pk)
             update_serializer = CVSerializer(instance=instance, data={"cv_text": text}, partial=True)
             if update_serializer.is_valid():
                 update_serializer.save()

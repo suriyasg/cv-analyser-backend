@@ -1,10 +1,10 @@
-from typing import TypedDict
+from typing import List, TypedDict
 
 from langchain_ollama import ChatOllama
 from langgraph.graph import END, START, StateGraph
-from presidio_analyzer import AnalyzerEngine
+from presidio_analyzer import AnalyzerEngine, recognizer_result
 from presidio_analyzer.nlp_engine import NlpEngineProvider
-from presidio_anonymizer import AnonymizerEngine
+from presidio_anonymizer import AnonymizerEngine, entities
 
 
 # Shared State
@@ -13,8 +13,8 @@ class State(TypedDict):
     anonymized_cv_text: str
     preprocessed_cv_text: str
     job_description: str
-    identified_hard_skills: list[str]
-    identified_soft_skills: list[str]
+    identified_hard_skills: str
+    identified_soft_skills: str
     hard_skill_analyser_output: str
     soft_skill_analyser_output: str
     summary_generator_output: str
@@ -47,12 +47,24 @@ def anonymizer_agent(state: State) -> State:
 
     pii_analyzer = AnalyzerEngine(nlp_engine=nlp_engine, supported_languages=["en"])
 
-    analyzer_results = pii_analyzer.analyze(
+    analyzer_results: List[recognizer_result.RecognizerResult] = pii_analyzer.analyze(
         text=state["raw_cv_text"],
         language="en",
     )
+
+    anonymizer_input: List[entities.RecognizerResult] = []
+    for result in analyzer_results:
+        anonymizer_input.append(
+            entities.RecognizerResult(
+                entity_type=result.entity_type,
+                start=result.start,
+                end=result.end,
+                score=result.score,
+            )
+        )
+
     anonymize_engine = AnonymizerEngine()
-    anonymized_cv_text = anonymize_engine.anonymize(text=state["raw_cv_text"], analyzer_results=analyzer_results)
+    anonymized_cv_text = anonymize_engine.anonymize(text=state["raw_cv_text"], analyzer_results=anonymizer_input)
     state["anonymized_cv_text"] = anonymized_cv_text.text
     return state
 
@@ -78,15 +90,17 @@ def preprocess_agent(state: State) -> State:
 
 def hard_skill_identifier_agent(state: State) -> State:
     print("hard_skill_identifier_agent")
-    state["identified_hard_skills"] = llm.invoke(
-        f"""
+    state["identified_hard_skills"] = str(
+        llm.invoke(
+            f"""
     Identify all hard skills required for this job from the given job description.
     Return only a simple Python list of skill names.
 
     Job Description:
     {state["job_description"]}
     """
-    ).text
+        ).text
+    )
     print("-" * 70, "identified_hard_skills")
     print(state["identified_hard_skills"])
     return state
@@ -94,15 +108,17 @@ def hard_skill_identifier_agent(state: State) -> State:
 
 def soft_skill_identifier_agent(state: State) -> State:
     print("soft_skill_identifier_agent")
-    state["identified_soft_skills"] = llm.invoke(
-        f"""
+    state["identified_soft_skills"] = str(
+        llm.invoke(
+            f"""
     Identify all soft skills required for this job from the given job description.
     Return only a simple Python list of soft skill names.
 
     Job Description:
     {state["job_description"]}
     """
-    ).text
+        ).text
+    )
     print("-" * 70, "identified_soft_skills")
     print(state["identified_soft_skills"])
     return state

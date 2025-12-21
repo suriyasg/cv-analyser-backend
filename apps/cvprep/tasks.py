@@ -1,4 +1,6 @@
 # cv/tasks.py
+from typing import cast
+
 from celery import shared_task
 
 from agent.steam_line_workflow import State, steam_line_workflow
@@ -26,8 +28,11 @@ def analyze_cv_task(self, cv_id, scan_id):
         #     {"raw_cv_text": raw_cv_text, "job_description": job_description}
         # )
 
-        result: State = steam_line_workflow.invoke(
-            {"raw_cv_text": cv.cv_text, "job_description": cv_scan.job_description}
+        result: State = cast(
+            State,
+            steam_line_workflow.invoke(
+                {"raw_cv_text": cv.cv_text, "job_description": cv_scan.job_description}  # type: ignore [arg-type]
+            ),
         )
 
         cv_scan.scan_result = result["summary_generator_output"]
