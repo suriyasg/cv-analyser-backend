@@ -100,6 +100,11 @@ jobs:
 
       - name: Run Django Tests with Coverage
         run: coverage run --source='.'  manage.py test
+        env:
+          CELERY_BROKER_URL: ${{ secrets.CELERY_BROKER_URL }}
+          GEN_AI_API_KEY: ${{ secrets.GEN_AI_API_KEY }}
+          USE_CELERY: $USE_CELERY
+          OLLAMA_BASE_URL: $OLLAMA_BASE_URL
 
       - name: Generate Coverage Report
         run: coverage xml -o coverage.xml
