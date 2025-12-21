@@ -317,6 +317,7 @@ class CVViewSet(mixins.ListModelMixin, GenericViewSet):
                     scan_status=CVScan.ScanStatus.PENDING,
                     cv=instance,
                     job_description=request.data.get("job_description", ""),
+                    title=request.data.get("scan_title", ""),
                 )
                 cv_scan.save()
                 cv_scan_serializer = CVScanSerializer(instance=cv_scan)
