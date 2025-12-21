@@ -11,12 +11,12 @@ from apps.api_auth.apis.customer.views import AuthCustomerViewSet
 from apps.api_auth.apis.cvowner.views import AuthCVOwnerViewSet
 from apps.cvprep.views import (
     CVDetailViewSet,
-    CVViewSet,
+    CVOwnerAPIView,
     CVOwnerListView,
     CVScanDetailView,
     CVScanListView,
     CVUploadView,
-    CVOwnerAPIView,
+    CVViewSet,
     get_csrf,
     get_logged_in_user,
 )
@@ -46,9 +46,7 @@ cv_detail_router.register("", CVDetailViewSet, basename="cvsdetails")
 common_router = DefaultRouter()
 common_router.register("auth/token", TokenCommonViewSet, basename="common-auth-token")
 common_router.register("auth", MeCommonViewSet, basename="common-auth")
-common_router.register(
-    "settings", GlobalSettingsCommonViewSet, basename="common-settings"
-)
+common_router.register("settings", GlobalSettingsCommonViewSet, basename="common-settings")
 
 urlpatterns = [
     path("api-auth/", include("rest_framework.urls"), name="rest_framework"),

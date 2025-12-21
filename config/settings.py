@@ -134,9 +134,7 @@ PASSWORD_HASHERS = [
 ]
 # https://docs.djangoproject.com/en/dev/ref/settings/#auth-password-validators
 AUTH_PASSWORD_VALIDATORS = [
-    {
-        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"
-    },
+    {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
     {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator"},
     {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
     {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
@@ -340,9 +338,7 @@ LOGGING = {
         },
         "key_value": {
             "()": structlog.stdlib.ProcessorFormatter,
-            "processor": structlog.processors.KeyValueRenderer(
-                key_order=["timestamp", "level", "event", "logger"]
-            ),
+            "processor": structlog.processors.KeyValueRenderer(key_order=["timestamp", "level", "event", "logger"]),
         },
     },
     "handlers": {
@@ -447,9 +443,7 @@ REST_FRAMEWORK = {
         "rest_framework.renderers.BrowsableAPIRenderer",
     ],
     "DEFAULT_PERMISSION_CLASSES": ["rest_framework.permissions.IsAuthenticated"],
-    "DEFAULT_AUTHENTICATION_CLASSES": [
-        "rest_framework_simplejwt.authentication.JWTAuthentication"
-    ],
+    "DEFAULT_AUTHENTICATION_CLASSES": ["rest_framework_simplejwt.authentication.JWTAuthentication"],
     "DEFAULT_FILTER_BACKENDS": ["django_filters.rest_framework.DjangoFilterBackend"],
     "EXCEPTION_HANDLER": "drf_standardized_errors.handler.exception_handler",
     "DEFAULT_SCHEMA_CLASS": "config.schema.CustomAutoSchema",
@@ -460,15 +454,11 @@ SIMPLE_JWT = {
 }
 # django-cors-headers - https://github.com/adamchainz/django-cors-headers#setup
 # Enable CORS to all API endpoints.
-CORS_ALLOWED_ORIGINS = env.list(
-    "CORS_ALLOWED_ORIGINS", default=["http://localhost:5173"]
-)
+CORS_ALLOWED_ORIGINS = env.list("CORS_ALLOWED_ORIGINS", default=["http://localhost:5173"])
 CORS_URLS_REGEX = r"^/(admin-api|api-auth|api/v1|csrf)/.*$"
 # Custom exception handler
 # https://drf-standardized-errors.readthedocs.io/en/latest/customization.html#handle-a-non-drf-exception
-DRF_STANDARDIZED_ERRORS = {
-    "EXCEPTION_HANDLER_CLASS": "config.exceptions.CustomExceptionHandler"
-}
+DRF_STANDARDIZED_ERRORS = {"EXCEPTION_HANDLER_CLASS": "config.exceptions.CustomExceptionHandler"}
 
 # ---------------------------------------------------------- DRF Spectacular OpenAPI Documentation ---------------------
 SPECTACULAR_SETTINGS = {
@@ -482,12 +472,8 @@ SPECTACULAR_SETTINGS = {
     "CONTACT": {"name": "kdsuneraavinash", "email": "sunera@ixdlabs.com"},
     "SERVE_PERMISSIONS": ["rest_framework.permissions.IsAdminUser"],
     "SERVE_AUTHENTICATION": ["rest_framework.authentication.SessionAuthentication"],
-    "AUTHENTICATION_WHITELIST": [
-        "rest_framework_simplejwt.authentication.JWTAuthentication"
-    ],
-    "POSTPROCESSING_HOOKS": [
-        "drf_standardized_errors.openapi_hooks.postprocess_schema_enums"
-    ],
+    "AUTHENTICATION_WHITELIST": ["rest_framework_simplejwt.authentication.JWTAuthentication"],
+    "POSTPROCESSING_HOOKS": ["drf_standardized_errors.openapi_hooks.postprocess_schema_enums"],
     "ENUM_NAME_OVERRIDES": {
         # Explanation: https://github.com/tfranzel/drf-spectacular/issues/482#issuecomment-904998597
         "ValidationErrorEnum": "drf_standardized_errors.openapi_serializers.ValidationErrorEnum",
@@ -564,10 +550,5 @@ if "test" in sys.argv:
 # This is placed last to make sure the changes done in settings file is all reflected here
 # https://docs.djangoproject.com/en/dev/ref/settings/#installed-apps
 INSTALLED_APPS = (
-    I18N_OVERRIDE_APPS
-    + DJANGO_ADMIN_THEME_APPS
-    + DJANGO_APPS
-    + THIRD_PARTY_APPS
-    + LOCAL_APPS
-    + CLEANUP_APPS
+    I18N_OVERRIDE_APPS + DJANGO_ADMIN_THEME_APPS + DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS + CLEANUP_APPS
 )

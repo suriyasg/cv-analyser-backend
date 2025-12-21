@@ -1,4 +1,5 @@
 from django.db import models
+
 from apps.users.models import User
 
 
@@ -39,9 +40,7 @@ class CVScan(TimeStampedModel):
 
     cv = models.ForeignKey(CV, on_delete=models.CASCADE)
     job_description = models.TextField(blank=True)
-    scan_status = models.CharField(
-        max_length=2, choices=ScanStatus.choices, default=ScanStatus.PENDING
-    )
+    scan_status = models.CharField(max_length=2, choices=ScanStatus.choices, default=ScanStatus.PENDING)
     # CV_STATUS = [
     #     ("pe", "PENDING"),
     #     ("st", "STARTED"),

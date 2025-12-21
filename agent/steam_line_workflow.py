@@ -1,15 +1,18 @@
-import re
+# import re
+import time
 from typing import TypedDict
 
 import environ
-from langchain_ollama import ChatOllama
+from langchain_google_genai import ChatGoogleGenerativeAI
 from langgraph.graph import StateGraph
-
 from presidio_analyzer import AnalyzerEngine
 from presidio_analyzer.nlp_engine import NlpEngineProvider
 from presidio_anonymizer import AnonymizerEngine
 
-import time
+from agent.parseJsonMarkdown import parse_markdown_json
+from agent.prompts import get_prompt, model_prompts, print_agent_prompt_and_response
+
+# from langchain_ollama import ChatOllama
 
 
 # Shared State
@@ -24,8 +27,6 @@ class State(TypedDict):
     soft_skill_analyser_output: str
     summary_generator_output: str
 
-
-from langchain_google_genai import ChatGoogleGenerativeAI
 
 env = environ.Env()
 env.read_env(".env")
@@ -58,9 +59,6 @@ llm = ChatGoogleGenerativeAI(
     max_retries=1,
 )
 
-from agent.parseJsonMarkdown import parse_markdown_json
-from agent.prompts import get_prompt, model_prompts, print_agent_prompt_and_response
-
 
 PROMPTS = get_prompt(model_prompts=model_prompts, model=MODEL_NAME)
 
@@ -83,9 +81,7 @@ def anonymizer_agent(state: State) -> State:
         language="en",
     )
     anonymize_engine = AnonymizerEngine()
-    anonymized_cv_text = anonymize_engine.anonymize(
-        text=state["raw_cv_text"], analyzer_results=analyzer_results
-    )
+    anonymized_cv_text = anonymize_engine.anonymize(text=state["raw_cv_text"], analyzer_results=analyzer_results)
     state["anonymized_cv_text"] = anonymized_cv_text.text
     print_agent_prompt_and_response(
         agent="anonymizer_agent",

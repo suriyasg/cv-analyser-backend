@@ -58,11 +58,7 @@ class AuthCustomerViewSet(PublicEndpoint, GenericViewSet):
         if user is None:
             raise ValidationError(_("Unable to log in with provided credentials"))
         if user.user_type != UserTypes.CUSTOMER:
-            raise ValidationError(
-                _(
-                    "You are not an Customer, so you cannot use this authentication method"
-                )
-            )
+            raise ValidationError(_("You are not an Customer, so you cannot use this authentication method"))
 
         # Encode the user JWT
         access_token, refresh_token = jwt_encode(user)

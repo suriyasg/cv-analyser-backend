@@ -1,36 +1,32 @@
 import os
-from django.views import View
-from rest_framework.views import APIView
-from rest_framework.viewsets import GenericViewSet, ReadOnlyModelViewSet
-from rest_framework.parsers import MultiPartParser, FormParser
-from rest_framework.response import Response
-
-from apps.api_auth.apis.common.serializers import UserSerializer
-from apps.cvprep.filter import CVFilter, StandardResultsSetPagination
-from apps.users.choices import UserTypes
-from config.settings import MEDIA_ROOT, MEDIA_URL
-from .serializers import (
-    CVOwnerSerializer,
-    CVSerializer,
-    CVScanSerializer,
-    UserCVOwnerSerializer,
-)
-from rest_framework import status, mixins, generics
-from .models import CV, CVOwner, CVScan
 
 import pymupdf
-from .tasks import analyze_cv_task
-
-from django.views.decorators.csrf import ensure_csrf_cookie
-from django.http import HttpResponse, HttpResponseBase, JsonResponse
-from django.middleware.csrf import get_token
-
-from apps.utils.permissions import IsAdminORCVScanOwner, IsSameUser, IsAdminORCVOwner
-from rest_framework.permissions import IsAuthenticated, IsAdminUser, AllowAny
-from rest_framework.decorators import api_view, permission_classes
-from rest_framework import exceptions
-
 from django.contrib.auth import get_user_model
+from django.http import JsonResponse
+from django.middleware.csrf import get_token
+from django.views.decorators.csrf import ensure_csrf_cookie
+from rest_framework import exceptions, generics, mixins, status
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.parsers import FormParser, MultiPartParser
+from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework.viewsets import GenericViewSet
+
+from apps.api_auth.apis.common.serializers import UserSerializer
+from apps.cvprep.filter import StandardResultsSetPagination
+from apps.users.choices import UserTypes
+from apps.utils.permissions import IsAdminORCVOwner, IsAdminORCVScanOwner, IsSameUser
+from config.settings import MEDIA_ROOT, MEDIA_URL
+
+from .models import CV, CVOwner, CVScan
+from .serializers import (
+    CVOwnerSerializer,
+    CVScanSerializer,
+    CVSerializer,
+    UserCVOwnerSerializer,
+)
+from .tasks import analyze_cv_task
 
 User = get_user_model()
 
@@ -77,16 +73,14 @@ class CVUploadView(APIView):
                     # get plain text encoded as UTF-8
                     text += page.get_text()
 
-            except:
+            except Exception:
                 return Response(
                     {"message": "could not parse text from cv, CV saved"},
                     status=status.HTTP_206_PARTIAL_CONTENT,
                 )
 
             instance = CV.objects.get(pk=serializer.data.get("id"))
-            update_serializer = CVSerializer(
-                instance=instance, data={"cv_text": text}, partial=True
-            )
+            update_serializer = CVSerializer(instance=instance, data={"cv_text": text}, partial=True)
             if update_serializer.is_valid():
                 update_serializer.save()
                 cv_scan = CVScan(
@@ -97,9 +91,7 @@ class CVUploadView(APIView):
                 )
                 cv_scan.save()
                 cv_scan_serializer = CVScanSerializer(instance=cv_scan)
-                analyze_cv_task.delay(
-                    update_serializer.data.get("id"), cv_scan_serializer.data.get("id")
-                )
+                analyze_cv_task.delay(update_serializer.data.get("id"), cv_scan_serializer.data.get("id"))
                 return Response(
                     {
                         "cv": update_serializer.data,
@@ -119,7 +111,8 @@ class CVOwnerAPIView(APIView):
     # Gives authentication methods, can be any of class which extends BaseAuthentication,
     # we are using JWTAuthentication from simpleJWT, which we delared in default DEFAULT_AUTHENTICATION_CLASSES
     # What if we use mutliple auth classess? how it will be handled? what will be checked first?
-    # from rest_framework.authentication import SessionAuthentication, BasicAuthentication, TokenAuthentication, RemoteUserAuthentication
+    # from rest_framework.authentication import SessionAuthentication,
+    # BasicAuthentication, TokenAuthentication, RemoteUserAuthentication
     # permission_classes = []
 
     def get_authenticators(self):
@@ -168,15 +161,11 @@ class CVOwnerAPIView(APIView):
         )
         print("user", user)
         if not user:
-            return Response(
-                {"message": "could not create user"}, status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response({"message": "could not create user"}, status=status.HTTP_400_BAD_REQUEST)
 
         cvowner_serializer = CVOwnerSerializer(data={"user": user.id})
         if not cvowner_serializer.is_valid():
-            return Response(
-                cvowner_serializer.errors, status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response(cvowner_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         cvowner_serializer.save()
         user_serializer = UserSerializer(instance=user)
         return Response(user_serializer.data, status=status.HTTP_400_BAD_REQUEST)
@@ -214,13 +203,9 @@ class CVScanListView(generics.ListCreateAPIView):
                 new_scan.save(cv=cv)
                 analyze_cv_task.delay(cv_id, new_scan.data.get("id"))
             else:
-                return Response(
-                    data=new_scan.errors, status=status.HTTP_400_BAD_REQUEST
-                )
+                return Response(data=new_scan.errors, status=status.HTTP_400_BAD_REQUEST)
         else:
-            raise exceptions.NotAuthenticated(
-                detail="You are not allowed to scan other user cvs"
-            )
+            raise exceptions.NotAuthenticated(detail="You are not allowed to scan other user cvs")
 
         return Response(data=new_scan.data, status=status.HTTP_201_CREATED)
 
@@ -301,16 +286,14 @@ class CVViewSet(mixins.ListModelMixin, GenericViewSet):
                     # get plain text encoded as UTF-8
                     text += page.get_text()
 
-            except:
+            except Exception:
                 return Response(
                     {"message": "could not parse text from cv, CV saved"},
                     status=status.HTTP_206_PARTIAL_CONTENT,
                 )
 
             instance = CV.objects.get(pk=serializer.data.get("id"))
-            update_serializer = CVSerializer(
-                instance=instance, data={"cv_text": text}, partial=True
-            )
+            update_serializer = CVSerializer(instance=instance, data={"cv_text": text}, partial=True)
             if update_serializer.is_valid():
                 update_serializer.save()
                 cv_scan = CVScan(
@@ -321,9 +304,7 @@ class CVViewSet(mixins.ListModelMixin, GenericViewSet):
                 )
                 cv_scan.save()
                 cv_scan_serializer = CVScanSerializer(instance=cv_scan)
-                analyze_cv_task.delay(
-                    update_serializer.data.get("id"), cv_scan_serializer.data.get("id")
-                )
+                analyze_cv_task.delay(update_serializer.data.get("id"), cv_scan_serializer.data.get("id"))
                 return Response(
                     {
                         "cv": update_serializer.data,
