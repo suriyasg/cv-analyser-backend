@@ -127,7 +127,7 @@ class CVOwnerAPIView(APIView):
     # permission_classes = []
 
     def get_authenticators(self):
-        if self.request.method == "POST":
+        if self.request and self.request.method == "POST":
             return []
         else:
             return super().get_authenticators()
