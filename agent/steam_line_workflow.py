@@ -58,7 +58,7 @@ llm = ChatGoogleGenerativeAI(
     max_retries=1,
 )
 
-from agent.parseJson import parse_markdown_json
+from agent.parseJsonMarkdown import parse_markdown_json
 from agent.prompts import get_prompt, model_prompts, print_agent_prompt_and_response
 
 
