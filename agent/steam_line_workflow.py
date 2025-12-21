@@ -45,6 +45,7 @@ OLLAMA_BASE_URL = env("OLLAMA_BASE_URL")
 # MODEL_NAME = "hhao/qwen2.5-coder-tools:0.5b"
 # MODEL_NAME = "gemini-2.5-flash-lite"
 MODEL_NAME = "gemini-2.5-flash"
+SLEEP_DURATION = 30
 
 # OLLAMA for local testing without ratelimits and other hinderances
 # llm = ChatOllama(base_url=OLLAMA_BASE_URL, model=MODEL_NAME)
@@ -108,7 +109,7 @@ def preprocess_agent(state: State) -> State:
         prompt=prompt,
         response=state["preprocessed_cv_text"],
     )
-    time.sleep(15)
+    time.sleep(SLEEP_DURATION)
     return state
 
 
@@ -125,7 +126,7 @@ def hard_skill_identifier_agent(state: State) -> State:
         prompt=prompt,
         response=state["identified_hard_skills"],
     )
-    time.sleep(15)
+    time.sleep(SLEEP_DURATION)
     return state
 
 
@@ -142,7 +143,7 @@ def soft_skill_identifier_agent(state: State) -> State:
         prompt=prompt,
         response=state["identified_soft_skills"],
     )
-    time.sleep(15)
+    time.sleep(SLEEP_DURATION)
     return state
 
 
@@ -168,7 +169,7 @@ def hard_skill_analyzer_agent(state: State) -> State:
         prompt=prompt,
         response=state["hard_skill_analyser_output"],
     )
-    time.sleep(15)
+    time.sleep(SLEEP_DURATION)
     return state
 
 
@@ -194,7 +195,7 @@ def soft_skill_analyzer_agent(state: State) -> State:
         prompt=prompt,
         response=state["soft_skill_analyser_output"],
     )
-    time.sleep(15)
+    time.sleep(SLEEP_DURATION)
     return state
 
 
