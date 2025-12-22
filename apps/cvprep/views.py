@@ -3,13 +3,14 @@ import uuid
 
 import pymupdf
 from django.contrib.auth import get_user_model
-from django.http import JsonResponse
+from django.http import FileResponse, JsonResponse
 from django.middleware.csrf import get_token
 from django.views.decorators.csrf import ensure_csrf_cookie
 from rest_framework import exceptions, generics, mixins, status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated
+from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import GenericViewSet
@@ -18,6 +19,7 @@ from apps.api_auth.apis.common.serializers import UserSerializer
 from apps.cvprep.filter import StandardResultsSetPagination
 from apps.users.choices import UserTypes
 from apps.utils.permissions import IsAdminORCVOwner, IsAdminORCVScanOwner, IsSameUser
+from config import settings
 from config.settings import MEDIA_ROOT, MEDIA_URL
 
 from .models import CV, CVOwner, CVScan
@@ -47,6 +49,22 @@ def get_logged_in_user(request):
     print("IS AUTH:", request.user.is_authenticated)
     user = {"id": request.user.id, "username": request.user.username}
     return JsonResponse(user, safe=False)
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def serve_cvs(request: Request):
+    if request and request.user:
+        cv_owner = generics.get_object_or_404(CVOwner, user=request.user)
+        cv = generics.get_object_or_404(CV, owner=cv_owner, file=request.path.strip(settings.MEDIA_URL))
+        return FileResponse(
+            cv.file.open("rb"),
+            content_type="application/pdf",
+            as_attachment=False,  # True → download, False → open in browser
+            filename=os.path.basename(cv.file.name),
+        )
+    else:
+        raise exceptions.NotAuthenticated(detail="user data not available")
 
 
 class CVUploadView(APIView):
