@@ -305,10 +305,11 @@ class CVViewSet(mixins.ListModelMixin, GenericViewSet):
             # serializer.save()
             serializer.save(owner=request.user.cvowner)
 
+            urlPath = serializer.data.get("file")
+            if urlPath is None:
+                raise exceptions.ValidationError(detail="file name can not be none", code="error")
+
             try:
-                urlPath = serializer.data.get("file")
-                if urlPath is None:
-                    raise exceptions.ParseError(detail="file name can not be none", code="error")
                 path = urlPath.replace(MEDIA_URL, "")
                 fileLocation = os.path.join(MEDIA_ROOT, path)
 
@@ -321,10 +322,8 @@ class CVViewSet(mixins.ListModelMixin, GenericViewSet):
                     text += page.get_text()
 
             except Exception:
-                return Response(
-                    {"message": "could not parse text from cv, CV saved"},
-                    status=status.HTTP_206_PARTIAL_CONTENT,
-                )
+                raise exceptions.ParseError(detail="Could not parse text from CV, CV is Saved", code="error")
+
             pk = serializer.data.get("id")
             if pk is None:
                 return Response(
@@ -333,6 +332,7 @@ class CVViewSet(mixins.ListModelMixin, GenericViewSet):
                 )
             instance = CV.objects.get(pk=pk)
             update_serializer = CVSerializer(instance=instance, data={"cv_text": text}, partial=True)
+
             if update_serializer.is_valid():
                 update_serializer.save()
                 cv_scan = CVScan(
@@ -352,10 +352,8 @@ class CVViewSet(mixins.ListModelMixin, GenericViewSet):
                     status=status.HTTP_201_CREATED,
                 )
             else:
-                return Response(
-                    {"message": "could not save text from cv"},
-                    status=status.HTTP_206_PARTIAL_CONTENT,
-                )
+                Response(update_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
