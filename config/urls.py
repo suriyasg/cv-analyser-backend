@@ -11,15 +11,17 @@ from apps.api_auth.apis.customer.views import AuthCustomerViewSet
 from apps.api_auth.apis.cvowner.views import AuthCVOwnerViewSet
 from apps.cvprep.views import (
     CVDetailViewSet,
-    CVOwnerAPIView,
-    CVOwnerListView,
     CVScanDetailView,
     CVScanListView,
-    CVUploadView,
     CVViewSet,
+    serve_cvs,
+)
+from apps.cvprep.views_additional import (
+    CVOwnerAPIView,
+    CVOwnerListView,
+    CVUploadView,
     get_csrf,
     get_logged_in_user,
-    serve_cvs,
 )
 from apps.dashboard.apis.common.views import GlobalSettingsCommonViewSet
 from apps.users.apis.customer.views import CustomerViewSet
@@ -51,8 +53,6 @@ common_router.register("settings", GlobalSettingsCommonViewSet, basename="common
 
 urlpatterns = [
     path("api-auth/", include("rest_framework.urls"), name="rest_framework"),
-    path("csrf/", get_csrf, name="get-csrf"),
-    path("me/", get_logged_in_user, name="me"),
     path("api/v1/", include(customer_router.urls)),
     path("api/v1/", include(cvowner_router.urls)),
     path("api/v1/", include(common_router.urls)),
@@ -61,7 +61,11 @@ urlpatterns = [
     # Admin site URLs
     path("admin/", admin.site.urls),
     path("", RedirectView.as_view(pattern_name="admin:index")),
-    path("upload/", CVUploadView.as_view(), name="file_upload"),
+]
+
+
+# CV app urls
+urlpatterns += [
     path(
         "scans/",
         view=CVScanListView.as_view(),
@@ -74,16 +78,6 @@ urlpatterns = [
     ),
     path("cvs/", include(cv_router.urls)),
     path("cvs/", include(cv_detail_router.urls)),
-    # path("cvs/<int:pk>", view=CVDetailView.as_view(), name="cv"),
-    path("apiview/cvowners/", view=CVOwnerAPIView.as_view(), name="apiview-cvowners"),
-    path(
-        "listcreateapiview/cvowners/",
-        view=CVOwnerListView.as_view(),
-        name="listcreateapiview-cvowners",
-    ),
-    # redundant and tests
-    # path("status/", CVScanViewSet.as_view({"get": "list"}), name="status"),
-    # path("target/", view=TargetView.as_view(), name="targer"),
 ]
 
 if settings.DEBUG:
@@ -97,3 +91,16 @@ if settings.USE_DEBUG_TOOLBAR:
     urlpatterns += [
         path("__debug__/", include("debug_toolbar.urls")),
     ]
+
+# experimental and tests
+urlpatterns += [
+    path("csrf/", get_csrf, name="get-csrf"),
+    path("me/", get_logged_in_user, name="me"),
+    path("upload/", CVUploadView.as_view(), name="file_upload"),
+    path("apiview/cvowners/", view=CVOwnerAPIView.as_view(), name="apiview-cvowners"),
+    path(
+        "listcreateapiview/cvowners/",
+        view=CVOwnerListView.as_view(),
+        name="listcreateapiview-cvowners",
+    ),
+]
