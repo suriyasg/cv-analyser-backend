@@ -1,7 +1,7 @@
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
-from django.urls import include, path
+from django.urls import include, path, re_path
 from django.views.generic import RedirectView
 from drf_spectacular import views as spec_views
 from rest_framework.routers import DefaultRouter
@@ -19,6 +19,7 @@ from apps.cvprep.views import (
     CVViewSet,
     get_csrf,
     get_logged_in_user,
+    serve_cvs,
 )
 from apps.dashboard.apis.common.views import GlobalSettingsCommonViewSet
 from apps.users.apis.customer.views import CustomerViewSet
@@ -85,7 +86,12 @@ urlpatterns = [
     # path("target/", view=TargetView.as_view(), name="targer"),
 ]
 
-urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+if settings.DEBUG:
+    # order is important to serve files with proper permission in dev
+    urlpatterns += [
+        re_path(r"media/uploads/*", view=serve_cvs, name="protected-cvs"),
+    ]
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 if settings.USE_DEBUG_TOOLBAR:
     urlpatterns += [
