@@ -38,13 +38,13 @@ class PartialCVScanSerializer(serializers.ModelSerializer):
 
 class CVSerializer(serializers.ModelSerializer):
     scans = PartialCVScanSerializer(many=True, read_only=True, source="cvscan_set")
-    file = serializers.SerializerMethodField()
+    file_url = serializers.SerializerMethodField()
 
     class Meta:
         model = CV
-        fields = ["id", "title", "file", "cv_text", "owner_id", "scans"]
+        fields = ["id", "title", "file", "file_url", "cv_text", "owner_id", "scans"]
 
-    def get_file(self, obj):
+    def get_file_url(self, obj):
         if obj.file:
             return obj.file.url
         return None
