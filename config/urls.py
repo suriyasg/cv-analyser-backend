@@ -92,6 +92,9 @@ if settings.USE_DEBUG_TOOLBAR:
         path("__debug__/", include("debug_toolbar.urls")),
     ]
 
+# profiling and inspection tool
+urlpatterns += [path("silk/", include("silk.urls", namespace="silk"))]
+
 # experimental and tests
 urlpatterns += [
     path("csrf/", get_csrf, name="get-csrf"),
