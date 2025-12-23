@@ -106,6 +106,7 @@ THIRD_PARTY_APPS = [
     "drf_standardized_errors",
     "import_export",
     "phonenumber_field",
+    "silk",
 ]
 LOCAL_APPS = [
     "apps.dashboard.apps.DashboardConfig",
@@ -155,6 +156,7 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "django_structlog.middlewares.RequestMiddleware",
     "apps.dashboard.middlewares.MaintenanceModeMiddleware",
+    "silk.middleware.SilkyMiddleware",
 ]
 
 # ---------------------------------------------------------- Static ----------------------------------------------------
@@ -255,6 +257,7 @@ TEMPLATES = [
                 "django.template.context_processors.static",
                 "django.template.context_processors.tz",
                 "django.contrib.messages.context_processors.messages",
+                "django.template.context_processors.request",
             ],
             "debug": DEBUG,
         },
@@ -556,3 +559,5 @@ INSTALLED_APPS = (
 
 GEN_AI_API_KEY = env.str("GEN_AI_API_KEY", default="")
 OLLAMA_BASE_URL = env.str("OLLAMA_BASE_URL", default="")
+
+SILKY_PYTHON_PROFILER = True

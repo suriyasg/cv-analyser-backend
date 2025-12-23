@@ -62,7 +62,7 @@ django-extensions==4.1
 django-structlog==10.0.0
 setuptools==80.9.0
 django-zeal==2.0.4
-
+django-silk==5.4.3
 # ---------------------------------------- Package Managment Tools -----------------------------------------------------
 
 # To upgrade pip packages: pip-upgrade
