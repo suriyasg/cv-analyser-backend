@@ -41,9 +41,11 @@ def serve_cvs(request: Request):
 
 class CVScanListView(generics.ListCreateAPIView):
     permission_classes = [IsAuthenticated]
-    queryset = CVScan.objects.all()
     serializer_class = CVScanSerializer
     filterset_fields = ["scan_status"]
+
+    def get_queryset(self):
+        return CVScan.objects.prefetch_related("cv")
 
     def get(self, request, *args, **kwargs):
         if self.request.user.is_staff:
@@ -103,7 +105,12 @@ class CVViewSet(mixins.ListModelMixin, GenericViewSet):
             if user_id is None or not isinstance(user_id, (str, uuid.UUID)):
                 raise exceptions.ParseError(detail="could not get proper user id", code="error")
             owner_id = CVOwner.objects.get(user_id=user_id)
-            return self.queryset.filter(owner_id=owner_id)
+            return self.queryset.filter(owner_id=owner_id).prefetch_related("cvscan_set")
+            # TODO:
+            # N+1 query
+            # test with bigger database and see performace difference
+            # as in this small database time difference is inconsistance
+            # return self.queryset.filter(owner_id=owner_id)
 
     def create(self, request):
         data_with_owner = request.data
