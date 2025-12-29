@@ -93,7 +93,7 @@ class CVViewSet(mixins.ListModelMixin, GenericViewSet):
     from rest_framework import filters
 
     filter_backends = [filters.SearchFilter]
-    search_fields = ["title"]
+    search_fields = ["title", "cvscan__title", "cv_text"]
 
     pagination_class = StandardResultsSetPagination
 
