@@ -85,7 +85,14 @@ class CVScanDetailView(generics.RetrieveAPIView, generics.UpdateAPIView):
     serializer_class = CVScanSerializer
 
 
-class CVViewSet(mixins.ListModelMixin, GenericViewSet):
+class CVViewSet(
+    mixins.CreateModelMixin,
+    mixins.ListModelMixin,
+    mixins.RetrieveModelMixin,
+    mixins.UpdateModelMixin,
+    mixins.DestroyModelMixin,
+    GenericViewSet,
+):
     permission_classes = [IsAdminORCVOwner]
     serializer_class = CVSerializer
     queryset = CV.objects.all()
@@ -167,14 +174,3 @@ class CVViewSet(mixins.ListModelMixin, GenericViewSet):
                 return Response(update_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-class CVDetailViewSet(
-    mixins.ListModelMixin,
-    mixins.RetrieveModelMixin,
-    mixins.UpdateModelMixin,
-    GenericViewSet,
-):
-    permission_classes = [IsAdminORCVOwner]
-    queryset = CV.objects.all()
-    serializer_class = CVSerializer

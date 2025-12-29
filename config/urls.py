@@ -9,13 +9,7 @@ from rest_framework.routers import DefaultRouter
 from apps.api_auth.apis.common.views import MeCommonViewSet, TokenCommonViewSet
 from apps.api_auth.apis.customer.views import AuthCustomerViewSet
 from apps.api_auth.apis.cvowner.views import AuthCVOwnerViewSet
-from apps.cvprep.views import (
-    CVDetailViewSet,
-    CVScanDetailView,
-    CVScanListView,
-    CVViewSet,
-    serve_cvs,
-)
+from apps.cvprep.views import CVScanDetailView, CVScanListView, CVViewSet, serve_cvs
 from apps.cvprep.views_additional import (
     CVOwnerAPIView,
     CVOwnerListView,
@@ -41,10 +35,6 @@ cvowner_router.register("auth", AuthCVOwnerViewSet, basename="auth")
 
 cv_router = DefaultRouter()
 cv_router.register("", CVViewSet, basename="cvs")
-
-cv_detail_router = DefaultRouter()
-cv_detail_router.register("", CVDetailViewSet, basename="cvsdetails")
-
 
 common_router = DefaultRouter()
 common_router.register("auth/token", TokenCommonViewSet, basename="common-auth-token")
@@ -77,7 +67,6 @@ urlpatterns += [
         name="scan_results",
     ),
     path("cvs/", include(cv_router.urls)),
-    path("cvs/", include(cv_detail_router.urls)),
 ]
 
 if settings.DEBUG:
