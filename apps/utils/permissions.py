@@ -15,6 +15,14 @@ class IsAdminORCVOwner(permissions.BasePermission):
     Custom permission to only allow owners of an object to access it.
     """
 
+    def has_permission(self, request, view):
+        return (
+            request.user
+            and request.user.is_authenticated
+            and isinstance(request.user, User)
+            and (request.user.user_type == UserTypes.CVOWNER or request.user.is_superuser)
+        )
+
     def has_object_permission(self, request, view, obj):
         # Write permissions are only allowed to the owner of the snippet.
         print("checking has_object_permission")

@@ -12,7 +12,7 @@ from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
 
 from apps.cvprep.filter import StandardResultsSetPagination
-from apps.utils.permissions import IsAdminORCVOwner, IsAdminORCVScanOwner, IsSameUser
+from apps.utils.permissions import IsAdminORCVOwner, IsAdminORCVScanOwner
 from config import settings
 from config.settings import MEDIA_ROOT, MEDIA_URL
 
@@ -86,7 +86,7 @@ class CVScanDetailView(generics.RetrieveAPIView, generics.UpdateAPIView):
 
 
 class CVViewSet(mixins.ListModelMixin, GenericViewSet):
-    permission_classes = [IsSameUser]
+    permission_classes = [IsAdminORCVOwner]
     serializer_class = CVSerializer
     queryset = CV.objects.all()
 
