@@ -12,12 +12,12 @@ from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
 
 from apps.cvprep.filter import StandardResultsSetPagination
-from apps.utils.permissions import IsAdminORCVOwner, IsAdminORCVScanOwner, IsSameUser
+from apps.utils.permissions import IsAdminORCVOwner, IsAdminORCVScanOwner
 from config import settings
 from config.settings import MEDIA_ROOT, MEDIA_URL
 
 from .models import CV, CVOwner, CVScan
-from .serializers import CVScanSerializer, CVSerializer
+from .serializers import CVScanCreateSerializer, CVScanSerializer, CVSerializer
 from .tasks import analyze_cv_task
 
 User = get_user_model()
@@ -85,15 +85,22 @@ class CVScanDetailView(generics.RetrieveAPIView, generics.UpdateAPIView):
     serializer_class = CVScanSerializer
 
 
-class CVViewSet(mixins.ListModelMixin, GenericViewSet):
-    permission_classes = [IsSameUser]
+class CVViewSet(
+    mixins.CreateModelMixin,
+    mixins.ListModelMixin,
+    mixins.RetrieveModelMixin,
+    mixins.UpdateModelMixin,
+    mixins.DestroyModelMixin,
+    GenericViewSet,
+):
+    permission_classes = [IsAdminORCVOwner]
     serializer_class = CVSerializer
     queryset = CV.objects.all()
 
     from rest_framework import filters
 
     filter_backends = [filters.SearchFilter]
-    search_fields = ["title"]
+    search_fields = ["title", "cvscan__title", "cv_text"]
 
     pagination_class = StandardResultsSetPagination
 
@@ -113,11 +120,8 @@ class CVViewSet(mixins.ListModelMixin, GenericViewSet):
             # return self.queryset.filter(owner_id=owner_id)
 
     def create(self, request):
-        data_with_owner = request.data
-
-        serializer = CVSerializer(data=data_with_owner)
+        serializer = CVSerializer(data=request.data)
         if serializer.is_valid():
-            # serializer.save()
             serializer.save(owner=request.user.cvowner)
 
             urlPath = serializer.data.get("file")
@@ -139,45 +143,34 @@ class CVViewSet(mixins.ListModelMixin, GenericViewSet):
             except Exception:
                 raise exceptions.ParseError(detail="Could not parse text from CV, CV is Saved", code="error")
 
-            pk = serializer.data.get("id")
-            if pk is None:
+            assert serializer.instance is not None
+            cv_pk = serializer.instance.id
+            if cv_pk is None:
                 return Response(
                     {"message": "could not get id of CV"},
                     status=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 )
-            instance = CV.objects.get(pk=pk)
+
+            instance = serializer.instance
             update_serializer = CVSerializer(instance=instance, data={"cv_text": text}, partial=True)
 
             if update_serializer.is_valid():
                 update_serializer.save()
-                cv_scan = CVScan(
-                    scan_status=CVScan.ScanStatus.PENDING,
-                    cv=instance,
-                    job_description=request.data.get("job_description", ""),
-                    title=request.data.get("scan_title", ""),
-                )
-                cv_scan.save()
-                cv_scan_serializer = CVScanSerializer(instance=cv_scan)
-                analyze_cv_task.delay(update_serializer.data.get("id"), cv_scan_serializer.data.get("id"))
-                return Response(
-                    {
-                        "cv": update_serializer.data,
-                        "cv_scan": cv_scan_serializer.data,
-                    },
-                    status=status.HTTP_201_CREATED,
-                )
+                cv_scan_serializer = CVScanCreateSerializer(data=request.data)
+                if cv_scan_serializer.is_valid():
+                    cv_scan_serializer.save(
+                        cv=instance,
+                        scan_status=CVScan.ScanStatus.PENDING,
+                    )
+                    assert cv_scan_serializer.instance is not None
+                    analyze_cv_task.delay(cv_pk, cv_scan_serializer.instance.id)
+                    return Response(
+                        update_serializer.data,
+                        status=status.HTTP_201_CREATED,
+                    )
+                else:
+                    return Response(cv_scan_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
             else:
-                Response(update_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+                return Response(update_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-class CVDetailViewSet(
-    mixins.ListModelMixin,
-    mixins.RetrieveModelMixin,
-    mixins.UpdateModelMixin,
-    GenericViewSet,
-):
-    permission_classes = [IsAdminORCVOwner]
-    queryset = CV.objects.all()
-    serializer_class = CVSerializer

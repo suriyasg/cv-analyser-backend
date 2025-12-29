@@ -92,3 +92,22 @@ class CVScanSerializer(serializers.ModelSerializer):
         if obj.summary_generator_output:
             return json.loads(obj.summary_generator_output)
         return {}
+
+
+class CVScanCreateSerializer(serializers.ModelSerializer):
+    scan_title = serializers.CharField(
+        required=True,
+        write_only=True,
+    )
+
+    class Meta:
+        model = CVScan
+        fields = ["job_description", "scan_title"]
+
+    def create(self, validated_data):
+        # Map scan_title to title
+        title = validated_data.pop("scan_title", None)
+        if title:
+            validated_data["title"] = title
+
+        return super().create(validated_data)
